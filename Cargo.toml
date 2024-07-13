@@ -1,0 +1,8 @@
+[package]
+name = "karinc-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+karinc = { path = "../karinc" }
+karin-js = { path = "../karin-js" }
