@@ -23,15 +23,13 @@ fn main() {
     let input = build_input_tree();
     let options = CompilerOptions {
         output_root_name: "index".to_string(),
-        bundles: true,
-        module: JsModule::Es,
     };
     let output = Compiler::compile(&input, &options);
     println!();
     println!();
     println!("{:?}", output.logs);
     println!();
-    println!("{:?}", output.files.get(0).unwrap());
+    println!("{:?}", output.file);
 }
 
 fn build_input_tree() -> InputTree {
