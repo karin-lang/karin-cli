@@ -1,7 +1,8 @@
-use std::fs;
+use std::{env, fs, path};
 use std::io::Read;
-use std::path;
 
+use karin_js::option::*;
+use karin_js::Compiler;
 use karinc::parser::ast;
 use karinc::{hir::id::*, input::*};
 
@@ -19,11 +20,46 @@ pub struct File {
 }
 
 fn main() {
-    let hako_dir = get_dir("./src/sample/test");
-    let hako = conv_dir_to_hako(HakoId::new(0), &hako_dir);
-    let hakos = vec![hako];
-    let input = InputTree { hakos };
-    println!("{input:?}");
+    let input = build_input_tree();
+    let options = CompilerOptions {
+        output_root_name: "index".to_string(),
+        bundles: true,
+        module: JsModule::Es,
+    };
+    let output = Compiler::compile(&input, &options);
+    println!();
+    println!();
+    println!("{:?}", output.logs);
+    println!();
+    println!("{:?}", output.files.get(0).unwrap());
+}
+
+fn build_input_tree() -> InputTree {
+    let mut paths = Vec::new();
+    let args: Vec<String> = env::args().collect();
+    let mut args_iter = args.iter().skip(1);
+    while let Some(each_arg) = args_iter.next() {
+        let check_path = path::Path::new(each_arg);
+        if !check_path.is_dir() {
+            panic!("invalid directory: {each_arg}");
+        }
+        paths.push(each_arg);
+    }
+
+    let mut hakos = Vec::new();
+    let mut hako_id_counter = 0;
+    for each_path in paths {
+        let dir = get_dir(&each_path);
+        let id = {
+            let new_id = hako_id_counter;
+            hako_id_counter += 1;
+            new_id
+        };
+        let new_hako = conv_dir_to_hako(HakoId::new(id), &dir);
+        hakos.push(new_hako);
+    }
+
+    InputTree { hakos }
 }
 
 // hako のルートディレクトリを InputHako に変換する
@@ -84,8 +120,8 @@ fn get_submod_dirs<'a>(parent_dir: &'a Dir, filename: &'a str) -> Option<&'a Dir
 }
 
 fn get_dir(dirpath: &str) -> Dir {
-    let dirpath = path::Path::new(dirpath);
-    let dirname = dirpath.to_path_buf().canonicalize().unwrap().file_stem().unwrap().to_str().unwrap().to_string();
+    let dirpath = path::Path::new(dirpath).to_path_buf().canonicalize().unwrap();
+    let dirname = dirpath.file_stem().unwrap().to_str().unwrap().to_string();
     let read_dir = fs::read_dir(dirpath).unwrap();
     let mut files = Vec::new();
     let mut subdirs = Vec::new();
@@ -96,9 +132,13 @@ fn get_dir(dirpath: &str) -> Dir {
             let new_subdir = get_dir(&path_str);
             subdirs.push(new_subdir);
         } else {
-            let filename = path.file_stem().unwrap().to_str().unwrap().to_string();
-            let new_file = File { path: path.into_boxed_path(), name: filename };
-            files.push(new_file);
+            if let Some(fileext) = path.extension() {
+                if fileext == "kr" {
+                    let filename = path.file_stem().unwrap().to_str().unwrap().to_string();
+                    let new_file = File { path: path.into_boxed_path(), name: filename };
+                    files.push(new_file);
+                }
+            }
         }
     }
     Dir { name: dirname, files, subdirs }
