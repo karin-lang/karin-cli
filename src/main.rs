@@ -1,10 +1,8 @@
 use std::{env, fs, path};
-use std::io::Read;
+use std::io::{Read, Write};
 
-use karin_js::option::*;
-use karin_js::Compiler;
-use karinc::parser::ast;
-use karinc::{hir::id::*, input::*};
+use karin_js::{Compiler, option::*, output};
+use karinc::{parser::ast, hir::id::*, input::*};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Dir {
@@ -22,14 +20,10 @@ pub struct File {
 fn main() {
     let input = build_input_tree();
     let options = CompilerOptions {
-        output_root_name: "index".to_string(),
+        output_root_name: "output".to_string(),
     };
     let output = Compiler::compile(&input, &options);
-    println!();
-    println!();
-    println!("{:?}", output.logs);
-    println!();
-    println!("{:?}", output.file);
+    write_output_file(&output.file);
 }
 
 fn build_input_tree() -> InputTree {
@@ -147,4 +141,20 @@ fn read_file_content(filepath: &path::Path) -> String {
     let mut content = String::new();
     file.read_to_string(&mut content).unwrap();
     content
+}
+
+fn write_output_file(file: &output::OutputFile) {
+    match &file.source {
+        Some(code) if !code.source.is_empty() => {
+            let outpath = format!("./{}.{}", file.name, file.ext);
+            write_file_content(&path::Path::new(&outpath), &code.source);
+            println!("successfully compiled!");
+        },
+        _ => println!("there is no generated code"),
+    }
+}
+
+fn write_file_content(filepath: &path::Path, content: &str) {
+    let mut file = fs::File::create(filepath).unwrap();
+    file.write_all(content.as_bytes()).unwrap();
 }
