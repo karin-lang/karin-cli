@@ -3,6 +3,14 @@
 version = 3
 
 [[package]]
+name = "karin-cli"
+version = "0.1.0"
+dependencies = [
+ "karin-js",
+ "karinc",
+]
+
+[[package]]
 name = "karin-js"
 version = "0.1.0"
 dependencies = [
@@ -15,14 +23,6 @@ name = "karinc"
 version = "0.1.0"
 dependencies = [
  "maplit",
-]
-
-[[package]]
-name = "karinc-cli"
-version = "0.1.0"
-dependencies = [
- "karin-js",
- "karinc",
 ]
 
 [[package]]

@@ -1,5 +1,5 @@
 [package]
-name = "karinc-cli"
+name = "karin-cli"
 version = "0.1.0"
 edition = "2021"
 
