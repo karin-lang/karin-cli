@@ -3,20 +3,21 @@ mod build;
 use std::{env, path};
 
 use build::*;
-use karin_js::{Compiler, option::*};
+use karin_js::{option::*, output::Output, Compiler};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     match args.iter().skip(1).next() {
         Some(cmd) => match cmd.as_str() {
             "build" => run_build(),
+            "todo" => run_todo(),
             _ => println!("unknown command `{}`", cmd),
         },
         None => println!("please specify any command"),
     }
 }
 
-fn run_build() {
+fn compile() -> Output {
     let mut paths = Vec::new();
     let args: Vec<String> = env::args().collect();
     let mut args_iter = args.iter().skip(2);
@@ -27,12 +28,23 @@ fn run_build() {
         }
         paths.push(each_arg);
     }
-
     let input = build_input_tree(paths);
     let options = CompilerOptions {
         output_root_name: "output".to_string(),
     };
-    let output = Compiler::compile(&input, &options);
+    Compiler::compile(&input, &options)
+}
+
+fn run_build() {
+    let output = compile();
+    // fix
     println!("{:?}", output.logs);
     write_output_file(&output.file);
+}
+
+fn run_todo() {
+    let output = compile();
+    // fix
+    println!("{:?}", output.logs);
+    println!("{:?}", output.todos);
 }
