@@ -23,6 +23,7 @@ fn main() {
         output_root_name: "output".to_string(),
     };
     let output = Compiler::compile(&input, &options);
+    println!("{:?}", output.logs);
     write_output_file(&output.file);
 }
 
@@ -40,6 +41,8 @@ fn build_input_tree() -> InputTree {
 
     let mut hakos = Vec::new();
     let mut hako_id_counter = 0;
+    // 一番最初に指定された hako を main hako として扱う
+    let mut main_hako_name = None;
     for each_path in paths {
         let dir = get_dir(&each_path);
         let id = {
@@ -47,19 +50,23 @@ fn build_input_tree() -> InputTree {
             hako_id_counter += 1;
             new_id
         };
-        let new_hako = conv_dir_to_hako(HakoId::new(id), &dir);
+        let name = dir.name.clone();
+        if let None = main_hako_name {
+            main_hako_name = Some(name.clone());
+        }
+        let new_hako = conv_dir_to_hako(HakoId::new(id), name, &dir);
         hakos.push(new_hako);
     }
 
-    InputTree { hakos }
+    InputTree { hakos, main_hako_name: main_hako_name.expect("expected at least one module") }
 }
 
 // hako のルートディレクトリを InputHako に変換する
-fn conv_dir_to_hako(id: HakoId, hako_dir: &Dir) -> InputHako {
+fn conv_dir_to_hako(id: HakoId, name: String, hako_dir: &Dir) -> InputHako {
     let mut mod_id_counter = 0;
     let parent_mod_path = vec![hako_dir.name.clone()];
     let mods = conv_dir_to_mods(0 /* fix */, &mut mod_id_counter, &parent_mod_path, hako_dir);
-    InputHako { id, mods }
+    InputHako { id, name, mods }
 }
 
 // ディレクトリ内のファイルリストをモジュールリストに変換する (サブモジュール含む)
